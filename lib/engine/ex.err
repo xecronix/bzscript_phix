@@ -1,0 +1,3 @@
+C:\dev\bzscript_phix\lib\engine\parse_source.e:66
+    tokens = annotate_ast_with_filename(tokens, canon_path)
+             ^ a procedure name is not expected here

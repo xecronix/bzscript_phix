@@ -1,0 +1,6 @@
+fun println($s){
+	print($s);
+	print(`\n`);
+} 
+
+println(`Hello World`);
