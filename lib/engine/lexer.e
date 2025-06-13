@@ -1,4 +1,4 @@
--- tokenizer.e
+-- lexer.e
 include ../utils/ezbzll1.e
 include ast_token.e
 
@@ -64,7 +64,7 @@ function build_token_from_symbol()
     -- boiler plate for this functions so far.
     sequence buf = ""
     sequence token_start = current()
-    sequence t_name = token_start[_name]
+    sequence t_name = token_start[ast_token_name]
     sequence next_token = new_empty_ast_token() -- default token
     sequence t_next
     integer reduced = 0
@@ -72,7 +72,7 @@ function build_token_from_symbol()
     if has_more() then
         next_token = look_next()
     end if
-    t_next = next_token[_name]
+    t_next = next_token[ast_token_name]
     -- set up done.
     
     integer symidx = is_symbol(t_name, t_next)
@@ -86,9 +86,9 @@ function build_token_from_symbol()
     end for
     -- boiler plate for exiting these functions.
     if length(buf) then
-        token_start[_name] = buf
-        token_start[_kind] = BZKIND_ACTION
-        token_start[_factory_request_str] = sym_fac_str
+        token_start[ast_token_name] = buf
+        token_start[ast_token_kind] = BZKIND_ACTION
+        token_start[ast_token_factory_request_str] = sym_fac_str
         -- Reduced will always be true now.  I abused the buf earlier.
         -- hmm... If I need this to have meaning I'd better fix it. 
         -- Or, if I don't, ditch it.
@@ -106,7 +106,7 @@ function build_token_from_literal_num()
     sequence digits = {"0","1","2","3","4","5","6","7","8","9"}
     sequence digits_and_dot = {"0","1","2","3","4","5","6","7","8","9", "."}
     
-    if equal(token_start[_name], ".") then
+    if equal(token_start[ast_token_name], ".") then
         buf = "."
          next()
         dot_found = 1
@@ -114,13 +114,13 @@ function build_token_from_literal_num()
     
     while 1 do
         sequence token = current()
-        sequence t_name = token[_name]
+        sequence t_name = token[ast_token_name]
         sequence next_token = new_empty_ast_token()
         sequence t_next
         if (has_more()) then
             next_token = look_next()
         end if
-        t_next = next_token[_name]
+        t_next = next_token[ast_token_name]
         
         if equal(t_next, ".") then
             if (dot_found = 1) then
@@ -158,10 +158,10 @@ function build_token_from_literal_num()
     end while
     
     if length(buf) then
-        token_start[_name] = "__BZ__NUMBER__"
-        token_start[_kind] = BZKIND_LITERAL
-        token_start[_factory_request_str] = "literal_num"
-        token_start[_value] = buf
+        token_start[ast_token_name] = "__BZ__NUMBER__"
+        token_start[ast_token_kind] = BZKIND_LITERAL
+        token_start[ast_token_factory_request_str] = "literal_num"
+        token_start[ast_token_value] = buf
         reduced = 1
     end if
     tokens = ast_list_append(tokens, token_start)
@@ -177,13 +177,13 @@ function build_token_from_word()
     -- main loop
     while 1 do
         sequence token = current()
-        sequence t_name = token[_name]
+        sequence t_name = token[ast_token_name]
         sequence next_token = new_empty_ast_token()
         sequence t_next
         if (has_more()) then
             next_token = look_next()
         end if
-        t_next = next_token[_name]
+        t_next = next_token[ast_token_name]
         -- exit when the next token is a symbol or space
         if (is_symbol(t_name, t_next)) then
             -- because we're not going to handle this token move back
@@ -211,10 +211,10 @@ function build_token_from_word()
     
     -- boiler plate for exiting these functions.
     if length(buf) then
-        token_start[_name] = buf
-        token_start[_kind] = BZKIND_ACTION
-        token_start[_value] = "__WORD__"
-        token_start[_factory_request_str] = "" -- NOT YET.  We still need one more pass for context.
+        token_start[ast_token_name] = buf
+        token_start[ast_token_kind] = BZKIND_ACTION
+        token_start[ast_token_value] = "__WORD__"
+        token_start[ast_token_factory_request_str] = "" -- NOT YET.  We still need one more pass for context.
         reduced = 1 
     end if
     tokens = ast_list_append(tokens, token_start)
@@ -241,13 +241,13 @@ function build_token_from_literal_str()
     -- backtick.
     while 1 do 
         sequence token = current()
-        sequence t_name = sprintf("%s",token[_name])
+        sequence t_name = sprintf("%s",token[ast_token_name])
         sequence next_token = new_empty_ast_token()
         sequence t_next 
         if has_more() then
             next_token = look_next()
         end if
-        t_next = sprintf("%s",next_token[_name])
+        t_next = sprintf("%s",next_token[ast_token_name])
         
         if equal(t_name,"`") then
             -- we found an escaped backtick
@@ -270,10 +270,10 @@ function build_token_from_literal_str()
     end while
     
     if length(buf) then
-        t_start[_name] = "__BZ__STRING__"
-        t_start[_kind] = BZKIND_LITERAL
-        t_start[_factory_request_str] = "literal_str"
-        t_start[_value] = buf
+        t_start[ast_token_name] = "__BZ__STRING__"
+        t_start[ast_token_kind] = BZKIND_LITERAL
+        t_start[ast_token_factory_request_str] = "literal_str"
+        t_start[ast_token_value] = buf
         reduced = 1
     end if
     
@@ -344,9 +344,9 @@ procedure token_first_pass()
             last_token = tokens[last_token_idx]
         end if
         
-        sequence t_name = sprintf("%s", {token[_name]})
-        sequence t_next = sprintf("%s", {next_token[_name]})
-        sequence t_last = sprintf("%s", {last_token[_name]})
+        sequence t_name = sprintf("%s", {token[ast_token_name]})
+        sequence t_next = sprintf("%s", {next_token[ast_token_name]})
+        sequence t_last = sprintf("%s", {last_token[ast_token_name]})
         
         if is_whitespace(t_name) then
             -- we'll clean out the spaces in a final pass later.
@@ -382,7 +382,7 @@ end procedure
 procedure strip_spaces_from_stream()
     while 1 do
         sequence token = current()
-        object value = token[_value]
+        object value = token[ast_token_value]
         if equal(value, "__DELETE_ME__") = 0 then
             tokens = ast_list_append(tokens, token)
         end if
@@ -409,9 +409,9 @@ procedure raw_to_token()
         -- 1 skip some whitespace
         if  is_whitespace(c) then
                 sequence token = new_empty_ast_token()
-                token[_name] = " "
-                token[_line_num] = line_num
-                token[_value] = "__DELETE_ME__" --used to find deletable tokens later.
+                token[ast_token_name] = " "
+                token[ast_token_line_num] = line_num
+                token[ast_token_value] = "__DELETE_ME__" --used to find deletable tokens later.
                 -- not really needed for the machine... but for the
                 -- man, this makes things a little easier to read.
                 tokens = ast_list_append(tokens, token) 
@@ -428,18 +428,18 @@ procedure raw_to_token()
             sequence lastc = sprintf("%s",{recall()})
             if is_whitespace(lastc) or col_num = 1 then
                 sequence token = new_empty_ast_token()
-                token[_name] = " "
-                token[_line_num] = line_num
-                token[_value] = "__DELETE_ME__"
+                token[ast_token_name] = " "
+                token[ast_token_line_num] = line_num
+                token[ast_token_value] = "__DELETE_ME__"
                 -- not really needed for the machine... but for the
                 -- man, this makes things a little easier to read.
                 tokens = ast_list_append(tokens, token) 
             end if
 
             sequence token = new_empty_ast_token()
-            token[_name] = c
-            token[_line_num] = line_num
-            token[_col_num] = col_num
+            token[ast_token_name] = c
+            token[ast_token_line_num] = line_num
+            token[ast_token_col_num] = col_num
             tokens = ast_list_append(tokens, token)
             col_num += 1
         end if

@@ -1,6 +1,13 @@
-fun println($s){
+public let #x = 5;
+
+public fun println($s){
 	print($s);
 	print(`\n`);
 } 
 
-println(`Hello World`);
+private fun begin(@cli_args){
+	println(`Hello World`);
+}
+
+
+

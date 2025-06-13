@@ -65,7 +65,7 @@ public function parse_source(sequence source_file_name, sequence starting_path)
     tokens = group_tokens(source, tokens, symbols, keywords, paired)
     tokens = annotate_ast_with_filename(tokens, canon_path)
     print_ast_token_list(tokens)
-    TAstToken ast = make_ast(tokens)
+    t_ast_token ast = make_ast(tokens)
 
     -- (Optional) Namespace detection hook
     -- You could extract `namespace` from top-level tokens here if desired
@@ -135,16 +135,16 @@ end function
 
 function annotate_ast_with_filename(sequence tokens, sequence filename)
     for i = 1 to length(tokens) do
-        tokens[i][_file_name] = filename
+        tokens[i][ast_token_file_name] = filename
     end for
     return tokens
 end function
 
 function testme(sequence testfile_name)
-    TAstToken t = parse_source(testfile_name, ".")
+    t_ast_token t = parse_source(testfile_name, ".")
     print_ast_token(t)
     return t
 end function
 
--- TAstToken t = testme("a.bzs")
+-- t_ast_token t = testme("a.bzs")
 

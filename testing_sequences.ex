@@ -43,4 +43,12 @@ printf(1,"bool y = %d\n",{y})
 y = equal(x, 5)
 printf(1,"bool y = %d\n",{y})
 
+-- can I have a . in the name of a var?
+-- sequence name.first = "ronald" -- nope!!!
+
+-- must use floor or make sure that or make 
+--sure the lhs number is even.  where 7 is odd.
+integer xx = floor(7 * 1.5)
+printf(1, "%d\n", {xx})
+
 

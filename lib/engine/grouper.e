@@ -1,4 +1,4 @@
--- bztklite.e
+-- grouper.e
 -- this is a mini scripting language a little like C
 
 with trace
@@ -65,9 +65,9 @@ function keyword_idx(sequence char)
     return 0
 end function
 
-function symbol_child_location(TAstToken t)
+function symbol_child_location(t_ast_token t)
     integer i = 1
-    sequence t_name = t[_name]
+    sequence t_name = t[ast_token_name]
     while i <= length(symbols) do
         sequence k_name = symbols[i][_keyword_name]
         if equal(t_name, k_name) then
@@ -77,11 +77,11 @@ function symbol_child_location(TAstToken t)
     end while
     -- This will cause an error... but instead of the error happening here
     -- it will happen in the caller. IDK... maybe it's better to abort now?
-    -- I think it might be more useful to abort closer to where ever TAstToken 
+    -- I think it might be more useful to abort closer to where ever t_ast_token 
     -- came from so that I can figure out how an unknown symbol happened in the 
     -- first place. 
     return sprintf("symbol_child_location: unknown symbol child location for symbol[%s] line[%d] col[%d]",
-                {t_name, t[_line_num], t[_col_num]}) 
+                {t_name, t[ast_token_line_num], t[ast_token_col_num]}) 
 end function
 
 -- I use this to prevent typos.  If location is
@@ -138,112 +138,112 @@ public function group_tokens(sequence raw_source, sequence tokens,
         
         if (length(_tokens)) then
             prev_token = _tokens[length(_tokens)]
-            if length(prev_token[_child_stream_location]) = 0 then
-                prev_token[_child_stream_location] = filter_child_location("right_only")
+            if length(prev_token[ast_token_child_stream_location]) = 0 then
+                prev_token[ast_token_child_stream_location] = filter_child_location("right_only")
                 _tokens[length(_tokens)] = prev_token
             end if
         end if
         
-        sequence token_name = token[_name] -- easy to view in debugger
+        sequence token_name = token[ast_token_name] -- easy to view in debugger
         
         
-        if equal(token[_kind], BZKIND_LITERAL) then
+        if equal(token[ast_token_kind], BZKIND_LITERAL) then
             -- if the token is a literal... add to _tokens
-            token[_child_stream_location] = filter_child_location("no_children")
+            token[ast_token_child_stream_location] = filter_child_location("no_children")
             _tokens = append(_tokens, token)            
             
-        elsif find(token[_name], {"$", "#", "@"}) then
+        elsif find(token[ast_token_name], {"$", "#", "@"}) then
             -- else if the token is a sigil the thing that follows 
             -- is a var name. fuse and add to tokens
             
-            token[_name] = sprintf("%s%s", {token[_name], next_token[_name]})
-            token[_child_stream_location] = filter_child_location("no_children")
+            token[ast_token_name] = sprintf("%s%s", {token[ast_token_name], next_token[ast_token_name]})
+            token[ast_token_child_stream_location] = filter_child_location("no_children")
             _tokens = append(_tokens, token)
              next()
-            TAstToken pk = look_next()
-            if equal(prev_token[_name], "let") then
-                if equal(pk[_factory_request_str], "assignment") then
-                    TAstToken term = new_empty_ast_token()
-                    term[_name] = ";"
-                    term[_factory_request_str] = "expression_end" 
+            t_ast_token pk = look_next()
+            if equal(prev_token[ast_token_name], "let") then
+                if equal(pk[ast_token_factory_request_str], "assignment") then
+                    t_ast_token term = new_empty_ast_token()
+                    term[ast_token_name] = ";"
+                    term[ast_token_factory_request_str] = "expression_end" 
                     _tokens = append(_tokens, term)
                     _tokens = append(_tokens, copy_token(token))
-                elsif equal(pk[_factory_request_str], "expression_end") then
+                elsif equal(pk[ast_token_factory_request_str], "expression_end") then
                     -- do nothing
                 else
                     printf(1, "group_tokens: Invalid symbol at line: [%d] col:[%d]\n", 
-                        {pk[_line_num],pk[_col_num]})
+                        {pk[ast_token_line_num],pk[ast_token_col_num]})
                     printf(1, "group_tokens: expected [;] or [=] but found [%s] \n", 
-                        {pk[_name]})
+                        {pk[ast_token_name]})
                     abort(1)
                 end if
             end if
             
-        elsif equal(token[_name], "-") then 
+        elsif equal(token[ast_token_name], "-") then 
             -- if the thing before me is not a number, or a varible that's a number
             -- or the close of a function... then I'm a negative sign.
-            token[_child_stream_location] = filter_child_location("left_and_right")
-            if equal(prev_token[_name], "__BZ__NUMBER__" ) = 0 and
-                equal(prev_token[_factory_request_str], "var_number" ) = 0  and
-                equal(prev_token[_factory_request_str], "group_close" ) = 0 then 
+            token[ast_token_child_stream_location] = filter_child_location("left_and_right")
+            if equal(prev_token[ast_token_name], "__BZ__NUMBER__" ) = 0 and
+                equal(prev_token[ast_token_factory_request_str], "var_number" ) = 0  and
+                equal(prev_token[ast_token_factory_request_str], "group_close" ) = 0 then 
                 
-                token[_factory_request_str] = "negative"
-                token[_child_stream_location] = filter_child_location("right_only")
+                token[ast_token_factory_request_str] = "negative"
+                token[ast_token_child_stream_location] = filter_child_location("right_only")
             end if
             
             _tokens = append(_tokens, token)
             
-        elsif equal(token[_name], "+") then 
+        elsif equal(token[ast_token_name], "+") then 
             -- if the thing before me is not a number, or a varible that's a number
             -- or the close of a function... then I'm a negative sign.
-            token[_child_stream_location] = filter_child_location("left_and_right")
-            if equal(prev_token[_name], "__BZ__NUMBER__" ) = 0 and
-                equal(prev_token[_factory_request_str], "var_number" ) = 0  and
-                equal(prev_token[_factory_request_str], "group_close" ) = 0 then 
+            token[ast_token_child_stream_location] = filter_child_location("left_and_right")
+            if equal(prev_token[ast_token_name], "__BZ__NUMBER__" ) = 0 and
+                equal(prev_token[ast_token_factory_request_str], "var_number" ) = 0  and
+                equal(prev_token[ast_token_factory_request_str], "group_close" ) = 0 then 
                 
-                token[_factory_request_str] = "positive"
-                token[_child_stream_location] = filter_child_location("right_only")
+                token[ast_token_factory_request_str] = "positive"
+                token[ast_token_child_stream_location] = filter_child_location("right_only")
             end if
             
             _tokens = append(_tokens, token)
             
             
-        elsif keyword_idx(token[_name]) then
-            integer kw_idx = keyword_idx(token[_name])
+        elsif keyword_idx(token[ast_token_name]) then
+            integer kw_idx = keyword_idx(token[ast_token_name])
             sequence keyword_map = _keywords[kw_idx]
             
             sequence factory_str = keyword_map[_keyword_factory_str]
             sequence hint = token_hint(_bz_keyword)
             sequence child_loc = keyword_map[_child_location]
             
-            token[_factory_request_str] = factory_str
-            token[_value] = hint
-            token[_child_stream_location] = filter_child_location(child_loc)
+            token[ast_token_factory_request_str] = factory_str
+            token[ast_token_value] = hint
+            token[ast_token_child_stream_location] = filter_child_location(child_loc)
             
             _tokens = append(_tokens, token)
             
-        elsif equal(prev_token[_name], "fun") then
+        elsif equal(prev_token[ast_token_name], "fun") then
             -- this is a function def
-            token[_value] = token_hint(_fun_def)
-            token[_factory_request_str] = "fun_def"
-            token[_child_stream_location] = filter_child_location("right_only")
+            token[ast_token_value] = token_hint(_fun_def)
+            token[ast_token_factory_request_str] = "fun_def"
+            token[ast_token_child_stream_location] = filter_child_location("right_only")
             _tokens = append(_tokens, token)
             
-        elsif equal(token[_name], "(") then
-            if equal(prev_token[_value], token_hint(_bz_keyword)) or
-                equal(prev_token[_value], token_hint(_fun_call))  then
+        elsif equal(token[ast_token_name], "(") then
+            if equal(prev_token[ast_token_value], token_hint(_bz_keyword)) or
+                equal(prev_token[ast_token_value], token_hint(_fun_call))  then
                 
-                token[_value] = token_hint(_fun_call_group)
-            elsif equal(prev_token[_value], token_hint(_fun_def)) then
-                token[_value] = token_hint(_fun_def_group)
+                token[ast_token_value] = token_hint(_fun_call_group)
+            elsif equal(prev_token[ast_token_value], token_hint(_fun_def)) then
+                token[ast_token_value] = token_hint(_fun_def_group)
             else
-                token[_value] = token_hint(_math)
+                token[ast_token_value] = token_hint(_math)
             end if
             
-            token[_child_stream_location] = filter_child_location("right_only")
+            token[ast_token_child_stream_location] = filter_child_location("right_only")
             _tokens = append(_tokens, token)  
         
-        elsif length(token[_factory_request_str]) then
+        elsif length(token[ast_token_factory_request_str]) then
             -- token has a factory request str add to tokens. it's a symbol.
             -- Also, this symbol is considered recognizable soley by the
             -- factory_request_str.  Any symbol that needs further clarity 
@@ -253,14 +253,14 @@ public function group_tokens(sequence raw_source, sequence tokens,
             -- ( might be for a function call or maybe math
             
             sequence child_loc = symbol_child_location(token)
-            token[_child_stream_location] = filter_child_location(child_loc)           
+            token[ast_token_child_stream_location] = filter_child_location(child_loc)           
             _tokens = append(_tokens, token)
             
         else
             -- user function
-            token[_value] = token_hint(_fun_call)
-            token[_factory_request_str] = "fun_call"
-            token[_child_stream_location] = filter_child_location("right_only")
+            token[ast_token_value] = token_hint(_fun_call)
+            token[ast_token_factory_request_str] = "fun_call"
+            token[ast_token_child_stream_location] = filter_child_location("right_only")
             _tokens = append(_tokens, token)
         end if
         
